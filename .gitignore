@@ -1,0 +1,9 @@
+# Skip all files
+/*
+
+# Except for
+!.gitignore
+!custom-configs/
+!media/
+!server-pages/
+!main.tf
