@@ -27,3 +27,5 @@ Click the links for the instructions on how to install each of the tools on your
   - `terraform apply`
   ### Part 3 - Web
   - Visit `http://localhost:8080` on your browser.
+  ### Part 4 - Undeploy
+  - `terraform destroy`
