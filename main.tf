@@ -18,6 +18,11 @@ resource "docker_network" "terra_network" {
   name = "terra_network"
 }
 
+resource "docker_image" "uptime_kuma" {
+  name          = "louislam/uptime-kuma:latest"
+  keep_locally  = false
+}
+
 # IMAGES + MY CUSTOM IMAGES
 resource "docker_image" "nginx" {
   name          = "nginx:latest"
@@ -25,8 +30,8 @@ resource "docker_image" "nginx" {
 }
 
 resource "docker_image" "php_fpm" {
-  name         = "zhy7ne/8.1-fpm-alpine-z:2.0"
-  keep_locally = false
+  name          = "zhy7ne/8.1-fpm-alpine-z:2.0"
+  keep_locally  = false
 }
 
 resource "docker_image" "pxc0" {
@@ -37,6 +42,28 @@ resource "docker_image" "pxc0" {
 resource "docker_image" "pxc1" {
   name          = "percona/percona-xtradb-cluster:5.7"
   keep_locally  = false
+}
+
+# UPTIME KUMA SERVER
+resource "docker_container" "uptime_kuma" {
+  image = "louislam/uptime-kuma:latest"
+  name  = "uptime_kuma"
+  ports {
+    internal = 3001
+    external = 3001
+  }
+  volumes {
+    host_path      = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
+  }
+  env = [
+    "UPTIME_KUMA_DB_PATH=/app/data/db",
+    "UPTIME_KUMA_WEB_HOST=0.0.0.0",
+    "UPTIME_KUMA_WEB_PORT=3001",
+  ]
+  networks_advanced {
+    name = docker_network.terra_network.name
+  }
 }
 
 # LOAD BALANCER
@@ -51,6 +78,11 @@ resource "docker_container" "load_balancer" {
     internal = 80
     external = 8080
   }
+  env = [
+    "UPTIME_KUMA_MONITOR=true",
+    "UPTIME_KUMA_NAME=NGINX Load Balancer",
+    "UPTIME_KUMA_URL=http://lb:8080",
+    ]
   networks_advanced {
     name = docker_network.terra_network.name
   }
@@ -69,6 +101,11 @@ resource "docker_container" "server" {
     internal = 80
     external = 8081 + count.index
   }
+  env = [
+    "UPTIME_KUMA_MONITOR=true",
+    "UPTIME_KUMA_NAME=NGINX Server ${count.index + 1}",
+    "UPTIME_KUMA_URL=http://server${count.index + 1}:${8081 + count.index}",
+  ]
   networks_advanced {
     name = docker_network.terra_network.name
   }
@@ -92,6 +129,11 @@ resource "docker_container" "php_fpm" {
     internal = 9000
     external = 9001 + count.index
   }
+  env = [
+    "UPTIME_KUMA_MONITOR=true",
+    "UPTIME_KUMA_NAME=NGINX PHP-FPM ${count.index + 1}",
+    "UPTIME_KUMA_URL=http://php_fpm${count.index + 1}:${9001 + count.index}",
+  ]
   networks_advanced {
     name = docker_network.terra_network.name
   }
