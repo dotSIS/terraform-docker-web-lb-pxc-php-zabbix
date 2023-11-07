@@ -1,6 +1,6 @@
 <div class="info">
     <p align='center'>
-        <img src="https://raw.githubusercontent.com/dotSIS/terraform-docker-web-lb-pxc-php/main/media/terra_network.jpg">
+        <img src="https://raw.githubusercontent.com/dotSIS/terraform-docker-web-lb-pxc-php-upkuma/main/media/terra_network.jpg">
     </p>
 </div>
 
@@ -17,7 +17,7 @@ Click the links for the instructions on how to install each of the tools on your
 - CMT:              [`Terraform`](https://developer.hashicorp.com/terraform/downloads)
 
 ## Clone
-- `git clone https://github.com/dotSIS/terraform-docker-web-lb-pxc-php.git`
+- `git clone https://github.com/dotSIS/terraform-docker-web-lb-pxc-php-upkuma.git`
 ## Installation & Deployment
   ### Part 1 - Deploy load balancer, reverse proxy, php servers, & database bootstrap
   - `terraform init`
