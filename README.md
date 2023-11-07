@@ -10,6 +10,7 @@
 - Load balancer:    Nginx
 - Server:           2 Nginx reverse proxy servers + 2 Nginx custom PHP-FPM servers
 - Database:         3 PXC custom images
+- Monitor:          Uptime Kuma
 
 ## Requirements:
 Click the links for the instructions on how to install each of the tools on your machine.
@@ -19,7 +20,7 @@ Click the links for the instructions on how to install each of the tools on your
 ## Clone
 - `git clone https://github.com/dotSIS/terraform-docker-web-lb-pxc-php-upkuma.git`
 ## Installation & Deployment
-  ### Part 1 - Deploy load balancer, reverse proxy, php servers, & database bootstrap
+  ### Part 1 - Deploy load balancer, reverse proxy, php servers, database bootstrap, & monitor
   - `terraform init`
   - `terraform apply`
   ### Part 2 - Deploy joiner databases
@@ -27,5 +28,7 @@ Click the links for the instructions on how to install each of the tools on your
   - `terraform apply`
   ### Part 3 - Web
   - Visit `http://localhost:8080` on your browser.
-  ### Part 4 - Undeploy
+  ### Part 4 - Monitor
+  - Visit `http://localhost:3001` on your browser.
+  ### Part 5 - Undeploy
   - `terraform destroy`
