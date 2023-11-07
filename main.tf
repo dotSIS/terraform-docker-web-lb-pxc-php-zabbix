@@ -53,6 +53,10 @@ resource "docker_container" "uptime_kuma" {
     external = 3001
   }
   volumes {
+    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-upkuma/custom-configs/uptime-kuma/"
+    container_path = "/app/data/"
+  }
+  volumes {
     host_path      = "/var/run/docker.sock"
     container_path = "/var/run/docker.sock"
   }
