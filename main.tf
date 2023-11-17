@@ -18,12 +18,12 @@ resource "docker_network" "terra_network" {
   name = "terra_network"
 }
 
-resource "docker_image" "uptime_kuma" {
-  name          = "louislam/uptime-kuma:latest"
+# IMAGES + MY CUSTOM IMAGES
+resource "docker_image" "ubuntu_zabbix" {
+  name          = "zhy7ne/ubuntu_zabbix:3.0"
   keep_locally  = false
 }
 
-# IMAGES + MY CUSTOM IMAGES
 resource "docker_image" "nginx" {
   name          = "nginx:latest"
   keep_locally  = false
@@ -35,7 +35,7 @@ resource "docker_image" "php_fpm" {
 }
 
 resource "docker_image" "pxc0" {
-  name          = "zhy7ne/pxc_node0:3.0"
+  name          = "zhy7ne/pxc_node0:4.0"
   keep_locally  = false
 }
 
@@ -44,30 +44,32 @@ resource "docker_image" "pxc1" {
   keep_locally  = false
 }
 
-# UPTIME KUMA SERVER
-resource "docker_container" "uptime_kuma" {
-  image = "louislam/uptime-kuma:latest"
-  name  = "uptime_kuma"
+# ZABBIX SERVER
+resource "docker_container" "ubuntu_zabbix" {
+  name  = "ubuntu_zabbix"
+  image = docker_image.ubuntu_zabbix.image_id
   ports {
-    internal = 3001
-    external = 3001
+    internal = 80
+    external = 8090
   }
-  volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-upkuma/custom-configs/uptime-kuma/"
-    container_path = "/app/data/"
+  ports {
+    internal = 3306
+    external = 33071
   }
-  volumes {
-    host_path      = "/var/run/docker.sock"
-    container_path = "/var/run/docker.sock"
+  ports {
+    internal = 10050
+    external = 10050
   }
-  env = [
-    "UPTIME_KUMA_DB_PATH=/app/data/db",
-    "UPTIME_KUMA_WEB_HOST=0.0.0.0",
-    "UPTIME_KUMA_WEB_PORT=3001",
-  ]
+  ports {
+    internal = 10051
+    external = 10051
+  }
   networks_advanced {
     name = docker_network.terra_network.name
   }
+  depends_on = [docker_image.ubuntu_zabbix, docker_container.load_balancer]
+  stdin_open    = true
+  tty           = true
 }
 
 # LOAD BALANCER
@@ -75,21 +77,21 @@ resource "docker_container" "load_balancer" {
   image = docker_image.nginx.image_id
   name  = "lb"
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php/custom-configs/load-balancer.conf"
+    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/custom-configs/load-balancer.conf"
     container_path = "/etc/nginx/conf.d/default.conf"
   }
   ports {
     internal = 80
-    external = 8080
+    external = 8081
   }
-  env = [
-    "UPTIME_KUMA_MONITOR=true",
-    "UPTIME_KUMA_NAME=NGINX Load Balancer",
-    "UPTIME_KUMA_URL=http://lb:8080",
-    ]
+  ports {
+    internal = 10050
+    external = 10053
+  }
   networks_advanced {
     name = docker_network.terra_network.name
   }
+  depends_on = [docker_image.nginx, docker_container.server]
 }
 
 # NGINX SERVERS
@@ -98,22 +100,21 @@ resource "docker_container" "server" {
   name  = "server${count.index + 1}"
   image = docker_image.nginx.image_id
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php/custom-configs/server${count.index + 1}-php.conf"
+    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/custom-configs/server${count.index + 1}-php.conf"
     container_path = "/etc/nginx/conf.d/default.conf"
   }
   ports {
     internal = 80
-    external = 8081 + count.index
+    external = 8082 + count.index
   }
-  env = [
-    "UPTIME_KUMA_MONITOR=true",
-    "UPTIME_KUMA_NAME=NGINX Server ${count.index + 1}",
-    "UPTIME_KUMA_URL=http://server${count.index + 1}:${8081 + count.index}",
-  ]
+  ports {
+    internal = 10050
+    external = 10054 + count.index
+  }
   networks_advanced {
     name = docker_network.terra_network.name
   }
-  depends_on = [docker_image.php_fpm, docker_image.nginx]
+  depends_on = [docker_image.nginx, docker_container.php_fpm]
 }
 
 # PHP-FPM
@@ -122,26 +123,25 @@ resource "docker_container" "php_fpm" {
   name  = "php_fpm${count.index + 1}"
   image = docker_image.php_fpm.image_id
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php/server-pages/im-pit/"
+    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/server-pages/im-pit/"
     container_path = "/var/www/html/"
   }
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php/server-pages/im-pit/index${count.index + 1}.php"
+    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/server-pages/im-pit/index${count.index + 1}.php"
     container_path = "/var/www/html/index.php"
   }
   ports {
     internal = 9000
     external = 9001 + count.index
   }
-  env = [
-    "UPTIME_KUMA_MONITOR=true",
-    "UPTIME_KUMA_NAME=NGINX PHP-FPM ${count.index + 1}",
-    "UPTIME_KUMA_URL=http://php_fpm${count.index + 1}:${9001 + count.index}",
-  ]
+  ports {
+    internal = 10050
+    external = 10056 + count.index
+  }
   networks_advanced {
     name = docker_network.terra_network.name
   }
-  depends_on = [docker_image.php_fpm]
+  depends_on = [docker_image.php_fpm, docker_container.pxc_node0]
 }
 
 # PXC BOOTSTRAP NODE (Z)
@@ -157,30 +157,44 @@ resource "docker_container" "pxc_node0" {
   ]
   ports {
     internal = 3306
-    external = 33060
+    external = 33061
   }
-  network_mode = docker_network.terra_network.name
+  ports {
+    internal = 10050
+    external = 10058
+  }
+  networks_advanced {
+    name = docker_network.terra_network.name
+  }
+  depends_on = [docker_network.terra_network, docker_image.pxc0]
 }
 
 # PXC JOINER NODE(S), uncomment below after starting the bootstrap node
-# resource "docker_container" "pxc_node1" {
-#   count = 2
-#   image = docker_image.pxc1.image_id
-#   name  = "pxc_node${count.index + 1}"
-#   env = [
-#     "MYSQL_ALLOW_EMPTY_PASSWORD=yes",
-#     "MYSQL_ROOT_PASSWORD=password",
-#     "MYSQL_INITDB_SKIP_TZINFO=yes",
-#     "XTRABACKUP_PASSWORD=password",
-#     "CLUSTER_NAME=terracluster",
-#     "CLUSTER_JOIN=pxc_node0",
-#     "name=pxc_node${count.index + 1}",
-#     "net=terra_network",
-#     "PXC_ENCRYPT_CLUSTER_TRAFFIC=0",
-#   ]
-#   ports {
-#     internal = 3306
-#     external = 33061 + count.index
-#   }
-#   network_mode = docker_network.terra_network.name
-# }
+resource "docker_container" "pxc_node1" {
+  count = 2
+  image = docker_image.pxc1.image_id
+  name  = "pxc_node${count.index + 1}"
+  env = [
+    "MYSQL_ALLOW_EMPTY_PASSWORD=yes",
+    "MYSQL_ROOT_PASSWORD=password",
+    "MYSQL_INITDB_SKIP_TZINFO=yes",
+    "XTRABACKUP_PASSWORD=password",
+    "CLUSTER_NAME=terracluster",
+    "CLUSTER_JOIN=pxc_node0",
+    "name=pxc_node${count.index + 1}",
+    "net=terra_network",
+    "PXC_ENCRYPT_CLUSTER_TRAFFIC=0",
+  ]
+  ports {
+    internal = 3306
+    external = 33062 + count.index
+  }
+  ports {
+    internal = 10050
+    external = 10059 + count.index
+  }
+  networks_advanced {
+    name = docker_network.terra_network.name
+  }
+  depends_on = [docker_image.pxc1, docker_container.ubuntu_zabbix]
+}
