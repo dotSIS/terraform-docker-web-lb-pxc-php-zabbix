@@ -6,7 +6,7 @@
     R::setup('mysql:host=pxc_node0;dbname=im_pit', 'root', 'password');
 
     if(R::testConnection()) {
-        echo "<script type='text/javascript'>alert('Connected to the database baybeh! Kiss ko lalats biii!');</script>";
+        echo "<script type='text/javascript'>alert('Connected to the database!');</script>";
     } else {
         echo('Database connection failed!');
         echo "<script type='text/javascript'>alert('Database connection failed!');</script>";

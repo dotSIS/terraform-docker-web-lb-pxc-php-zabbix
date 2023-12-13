@@ -77,7 +77,7 @@ resource "docker_container" "load_balancer" {
   image = docker_image.nginx.image_id
   name  = "lb"
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/custom-configs/load-balancer.conf"
+    host_path      = "/home/zhy7ne/Projects/Terraform/web-lb-pxc-php-zabbix-copy/custom-configs/load-balancer.conf"
     container_path = "/etc/nginx/conf.d/default.conf"
   }
   ports {
@@ -100,7 +100,7 @@ resource "docker_container" "server" {
   name  = "server${count.index + 1}"
   image = docker_image.nginx.image_id
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/custom-configs/server${count.index + 1}-php.conf"
+    host_path      = "/home/zhy7ne/Projects/Terraform/web-lb-pxc-php-zabbix-copy/custom-configs/server${count.index + 1}-php.conf"
     container_path = "/etc/nginx/conf.d/default.conf"
   }
   ports {
@@ -123,11 +123,11 @@ resource "docker_container" "php_fpm" {
   name  = "php_fpm${count.index + 1}"
   image = docker_image.php_fpm.image_id
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/server-pages/im-pit/"
+    host_path      = "/home/zhy7ne/Projects/Terraform/web-lb-pxc-php-zabbix-copy/server-pages/im-pit/"
     container_path = "/var/www/html/"
   }
   volumes {
-    host_path      = "/home/zhy7ne/Projects/Fligno/Terraform/docker/web-lb-pxc-php-zabbix/server-pages/im-pit/index${count.index + 1}.php"
+    host_path      = "/home/zhy7ne/Projects/Terraform/web-lb-pxc-php-zabbix-copy/server-pages/im-pit/index${count.index + 1}.php"
     container_path = "/var/www/html/index.php"
   }
   ports {
